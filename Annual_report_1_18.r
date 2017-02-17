@@ -150,28 +150,3 @@ t.test(abund.mean$new~abund.mean$treatment)
 boxplot(species~treatment,data=abund.merge,col=c("lightblue", "white"),main="Bird abundance based on burn treatment",xlab="Burn Treatment",ylab="Bird Abundance")
 #dev.off()
 t.test(abund.merge$species~abund.merge$treatment)
-
-tests <- list()
-tests[[1]] <- t.test(salt_cedar_total~presence, data=bird.comp)
-tests[[2]] <- t.test(arundo_donax~presence, data=bird.comp)
-tests[[3]] <-t.test(invasives~presence, data=bird.comp)
-tests[[4]] <-t.test(mature.mesquite~presence, data=bird.comp)
-tests[[5]] <-t.test(bird.merge$species~bird.merge$treatment)
-tests[[6]] <-cor.test(bird.merge$species,bird.merge$invasives, method = "spearman")
-tests[[7]] <-cor.test(bird.merge$species,bird.merge$arundo_donax, method = "spearman")
-tests[[8]] <-cor.test(bird.merge$species,bird.merge$salt_cedar_total, method = "spearman")
-tests[[9]] <-t.test(abund.mean$new~abund.mean$treatment)
-
-# extract your values using `sapply`
-p_values<-sapply(tests, function(x) {
-     c(x$estimate[1],
-       x$estimate[2],
-       p.value = x$p.value)
-})
-
-colnames(p_values)<-c("salt_cedar v YBCU","arundo v YBCU","invasive v YBCU", "mesq v YBCU","bird_rich v treatment","bird_rich v invasive","bird_rich v arundo","bird_rich v scedar","mean_abund_v_treatment")
-
-write.table(p_values, file = "bird_p_values.csv", sep = " ",row.names = TRUE,col.names = TRUE, qmethod = c("escape", "double"),
-            fileEncoding = "")
-
-
