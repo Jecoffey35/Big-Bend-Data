@@ -70,4 +70,29 @@ veg.mds
 #ggsave(veg.mds,filename = "Vegetation_ord_2020.png",device = "png",width = 8,height = 5,units = "in",dpi = 320)
        
 ```
+## On to testing dispersion,ANOVAs and ANOSIMs of veg characteristics by Restoration Group
 
+```{betadisper r}
+b <- betadisper(d = d,group = env$Restoration_group, type = "median",add = T)
+permutest(b, pairwise = TRUE, permutations = 999)
+
+# plot in PCA space
+plot(b,main = "Habitat Characteristics")
+
+```
+
+```{r ANOVA}
+head(env)
+#Run separately for each of the below plus run tukey's hsd for multiple comparisons correction
+#then run remove() to make sure we're refreshing the mod variable after each run.
+remove(mod)
+#NDVI_new, naip_text_cv, cane_rs, herbs, tree_cover
+mod <- aov(formula = tree_cover~Restoration_group,data = env)
+summary(mod)
+TukeyHSD(x = mod)
+
+##And ANOSIM, testing hypothesis that there is no difference among habitat characteristics 
+anos <- anosim(x = env[,2:6], grouping = env$Restoration_group,distance = 'euclidean',permutations = 999)
+anos
+
+```
