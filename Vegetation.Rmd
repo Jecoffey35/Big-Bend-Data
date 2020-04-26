@@ -1,0 +1,73 @@
+---
+title: "BIBEVegetation_Analyses_2020"
+author: "Julie Coffey"
+date: "April 26, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+setwd("~/Big-Bend-Data")
+require(vegan)#dist matrices, NMDS stuff
+require(ggplot2)#plotting
+require(tidyverse)#data shaping
+require(dplyr)# data manip
+require(reshape)
+```
+
+## BIBE Vegetation Analyses
+
+This script takes vegetation & remotely-sensed site characteristics and looks for differences between and among sites in three restoration groupings via ordination anova and anosim.
+
+```{r read in data}
+env <- read.csv("Environmental_df2020.csv",sep = ",")
+head(env)
+dim(env) #67  sites by 7 vars
+```
+
+## Create a distance matrix. 
+
+Here we will first standardize since our variables are on different scales, then create the matrix using Euclidean as a distance measure.
+
+```{r Distance matrix, echo=FALSE}
+rownames(env) <- env$site
+s.env <- scale(env[,2:6])
+head(s.env)
+
+d <- dist(s.env, method ="euclidean")
+head(d)
+d
+```
+
+## Ordinate!
+Okay, now let's visualize these distances with an ordination 
+
+```{r Ordinaton}
+vord <- metaMDS(comm = d,k = 3,trymax = 200,autotransform = F, wascores = T)
+stressplot(vord)
+vord  #stress = 0.04087459
+
+#Create a dataframe with the results for displaying
+scors <- as.data.frame(scores(vord, display = "sites")) #save NMDS results into dataframe
+scors <- cbind(scors, Management = env$Restoration_group) #add grouping variable "Management" to dataframe
+scors <- cbind(scors, Site = rownames(scors)) #add site names as variable if you want to display on plot
+head(scors)
+
+```
+## Plot our ordination
+
+```{r plot}
+veg.mds<- ggplot(scors, aes(x=NMDS1, y=NMDS2))+ 
+  geom_point(aes(NMDS1, NMDS2, shape = factor(Management), colour = factor(Management)), size = 3)+   
+  coord_fixed()+
+  scale_colour_grey()+
+  theme(panel.background = element_rect(fill = NA, colour = "black", size = 1, linetype = "solid"))+
+  labs(colour = "Restoration Group", shape = "Restoration Group")+ 
+  theme(legend.position = "right", legend.text = element_text(size = 12), legend.title = element_text(size = 12), axis.text = element_text(size = 10)) 
+
+veg.mds
+
+#ggsave(veg.mds,filename = "Vegetation_ord_2020.png",device = "png",width = 8,height = 5,units = "in",dpi = 320)
+       
+```
+
