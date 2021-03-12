@@ -1,0 +1,138 @@
+---
+title: 'NMDS Ordination BIBE Community Analysis 2021'
+author: "Julie Coffey"
+date: "March 12, 2021"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = '~/Big-Bend-Data')
+```
+#Read in libraries
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(plyr)
+library(ggrepel)#spacing for plot labels
+library(ggpubr)
+library(broom)
+```
+#Data inputs for this script include axes and arrow values from previous NMDS ordination script. 
+
+```{r}
+bird <- read.csv("Bird_ord_axes_values.csv")[,-1]
+bird.arrows <- read.csv("Bird_ord_arrows.csv")
+butt <- read.csv("Butterfly_ord_axes_values.csv")[,-1]
+butt.arrows <- read.csv("Butterfly_veg_arrows.csv")
+birdveg <- read.csv("Bird_veg_ord_axes_values.csv")
+buttveg <- read.csv("Butterfly_veg_axes_values.csv")
+head(butt.arrows)
+head(buttveg)
+```
+#Prior to visualizing, I'm going to cleanup and standardize some of the labels for ease of interpretation.
+
+```{r}
+#rename arrows
+levels(bird.arrows$Species) <- c("A.donax","Habitat heterogeneity","Greenness","Tree")
+levels(butt.arrows$Species) <- c("Herbaceous","Habitat heterogeneity","Greenness")
+head(butt.arrows)
+
+#Rename Mangement (burn) levels
+levels(butt$Management) <- c('Older','Recent','Unmanaged')
+levels(bird$Management) <- c('Older','Recent','Unmanaged')
+levels(buttveg$Management) <- c('Older','Recent','Unmanaged')
+levels(birdveg$Management) <- c('Older','Recent','Unmanaged')
+head(birdveg)
+head(buttveg)
+head(bird)
+head(butt)
+```
+#Next I'll create plots individually for each of the four- butterfly community (sites arranged by #difference in species composition), bird community, and vegetation characteristics at both the bird and #butterfly scales (sites by environmental variables).
+
+```{r}
+bird.mds <- ggplot(bird, aes(x=NMDS1, y=NMDS2))+ 
+  geom_point(aes(NMDS1, NMDS2, colour = factor(Management)), size = 4) +   
+  geom_segment(data = bird.arrows,
+               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),arrow=arrow(length = unit(0.25, "cm"))) +
+  #geom_text(x=0.22,y=0.19,label = "(A)", size=7) +
+  geom_text_repel(data = bird.arrows, aes(x = NMDS1, y = NMDS2, 
+                                       label = str_wrap(Species, width = 10)),nudge_x = -0.025,nudge_y = 0.015,segment.color = 'transparent') + #Gives space between labels
+  scale_colour_manual(values=c("Unmanaged" = "#009E73", "Older" = "#E69F00","Recent" = "#D55E00" )) +
+  xlab("Axis 1") + 
+  ylab("Axis 2") +
+  theme_bw()+
+  theme(text = element_text(size=18),legend.position = "none",legend.title=element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = NA, colour = "black", size = 1, linetype = "solid"))+
+  labs(colour = "Restoration Group")
+bird.mds
+#ggsave(plot = bird.mds,filename = "birdord_20210312.pdf",device = "pdf",dpi = 500)
+#Lars' suggestion:
+#tiff(filename, width = 1.9, height = 4, units='in', res=500, compression="lzw")
+#dev.off()
+
+#vegetation plot
+scaleFUN <- function(x) sprintf("%.1f", x)
+
+vbird.mds<- ggplot(birdveg, aes(x=NMDS1, y=NMDS2))+ 
+  geom_point(aes(NMDS1, NMDS2, colour = factor(Management)), size = 4) +   
+  scale_colour_manual(values=c("Unmanaged" = "#009E73", "Older" = "#E69F00","Recent" = "#D55E00")) +
+  #geom_text(x=0.56,y=0.24,label = "(B)", size=7) +
+  scale_x_continuous(labels=scaleFUN)+
+  scale_y_continuous(labels=scaleFUN)+
+  xlab("Axis 1") + 
+  ylab("Axis 2") +
+  theme_bw()+
+  theme(text = element_text(size=18),legend.position = "none",legend.title=element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        line = element_line(linetype = "solid"), 
+        panel.background = element_rect(fill = NA, colour = "black", size = 1, linetype = "solid"))+
+  labs(colour = "Restoration Group")
+vbird.mds
+#ggsave(plot = vbird.mds,filename = "birdvegord_20210312.pdf",device = "pdf",dpi = 500)
+#dev.off()
+
+###butterfly community plot
+bt.mds <- ggplot(butt, aes(x=NMDS1, y=NMDS2))+ 
+  geom_point(aes(NMDS1, NMDS2, colour = factor(Management)), size = 4) +   
+  geom_segment(data = butt.arrows,
+               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),arrow=arrow(length = unit(0.25, "cm"))) +
+  #geom_text(x=1,y=0.8,label = "(C)", size=7) +
+  geom_text_repel(data = butt.arrows, aes(x = NMDS1, y = NMDS2, 
+                                          label = str_wrap(Species, width = 10)),nudge_x = -0.09,nudge_y = -0.009,segment.color = 'transparent') + #Gives space between labels
+  scale_colour_manual(values=c("Unmanaged" = "#009E73", "Older" = "#E69F00","Recent" = "#D55E00" )) +
+  xlab("Axis 1") + 
+  ylab("Axis 2") +
+  theme_bw()+
+  theme(text = element_text(size=18),legend.position = "none",legend.title=element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = NA, colour = "black", size = 1, linetype = "solid"))+
+  labs(colour = "Restoration Group")
+bt.mds
+#ggsave(plot = bt.mds,filename = "buttord_20210312.pdf",device = "pdf",dpi = 500)
+#dev.off()
+
+#Butterfly veg ord
+btveg.mds <- ggplot(buttveg, aes(x=NMDS1, y=NMDS2)) + 
+  geom_point(aes(NMDS1, NMDS2, colour = factor(Management)), size = 4)+   
+  scale_colour_manual(values=c("Unmanaged" = "#009E73", "Older" = "#E69F00","Recent" = "#D55E00" )) +
+  #geom_text(x=2.9,y=2.5,label = "(D)", size=7) +
+  scale_y_continuous(labels=scaleFUN)+
+  scale_x_continuous(labels=scaleFUN)+
+  theme_bw()+
+  theme(text = element_text(size=18),legend.position = "none",legend.title=element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(),panel.background = element_rect(fill = NA, colour = "black", size = 1, linetype = "solid"))+
+  xlab("Axis 1") + 
+  ylab("Axis 2")+
+  labs(colour = "Restoration Group")
+btveg.mds
+
+#ggsave(plot = btveg.mds,filename = "buttordveg_20210312.pdf",device = "pdf",dpi = 500)
+#dev.off()
+```
+#Last, we arrange them into one figure with a common legend using ggarrange. Here I have butterfly #community first, then butterfly vegetation, followed by bird community and bird vegetation. 
+
+```{r}
+TADA <- ggarrange(bt.mds, btveg.mds, bird.mds, vbird.mds, ncol = 2, nrow=2,
+          widths=c(3, 3), common.legend = TRUE, legend="bottom")
+TADA
+#TADA <- gridExtra::grid.arrange(bird.mds, vbird.mds, bt.mds, btveg.mds, ncol = 2, nrow=2,
+                                #widths=c(3, 3))       
+#ggsave(file="2021NMDSplots.pdf", TADA,device = "pdf",width = 10,height = 10,units = "in",dpi = 500)
+
+```
